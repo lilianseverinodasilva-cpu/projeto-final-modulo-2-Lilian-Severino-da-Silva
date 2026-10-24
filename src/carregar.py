@@ -32,10 +32,10 @@ def tuplas(tabela, colunas):
 def inserir(con, tabela, colunas, dados):
     """Monta o INSERT INTO ... VALUES (%s, %s, ...) e envia todas as linhas de uma vez."""
     # Um %s para cada coluna. COMPLETE: monte uma lista com "%s" repetido len(colunas) vezes:  ["%s"] * len(colunas)
-    marcadores = ", ".join(____)
+    marcadores = ", ".join(["%s"] * len(colunas))
     sql = f"INSERT INTO {tabela} ({', '.join(colunas)}) VALUES ({marcadores})"
     # COMPLETE: envie em lote com banco.inserir_em_lote(conexao, sql, linhas)
-    banco.____(con, sql, tuplas(dados, colunas))
+    banco.inserir_em_lote(con, sql, tuplas(dados, colunas))
     print(f"   {tabela}: {len(dados)} linhas")
 
 
@@ -43,7 +43,7 @@ def main():
     # 1) Banco e tabelas. O script cria o banco, por isso conectamos sem escolher o database.
     con = banco.conectar(com_database=False)
     # COMPLETE: execute o arquivo SQL de criacao: banco.executar_script(conexao, caminho_do_arquivo)
-    banco.____(con, config.PASTA_SQL / "01_criar_banco.sql")
+    banco.executar_script(con, config.PASTA_SQL / "01_criar_banco.sql")
     con.close()
     con = banco.conectar()
 
@@ -59,20 +59,20 @@ def main():
     # 3) Fato (depois das dimensoes)
     fato = ler("fato_item_contratado")
     # dias_ciclo vem como 48.0 (decimal) porque tem vazios; o banco quer inteiro. COMPLETE: converta para o tipo "Int64"
-    fato["dias_ciclo"] = fato["dias_ciclo"].astype(____)
+    fato["dias_ciclo"] = fato["dias_ciclo"].astype("Int64")
     colunas = ["numero_controle_pncp", "numero_item", "sk_orgao", "sk_fornecedor", "sk_modalidade", "sk_localidade",
                "data_publicacao", "data_homologacao", "descricao_item", "perfil_gasto", "quantidade",
                "valor_unitario_estimado", "valor_total_estimado", "valor_unitario_homologado", "valor_total_homologado",
                "comparavel", "economia_valor", "dias_ciclo"]
     # COMPLETE: o nome da tabela da fato
-    inserir(con, ____, colunas, fato)
+    inserir(con, "fato_item_contratado", colunas, fato)
 
     # 4) Conferencia: o que esta no banco tem que bater com a prova real (anexo 8 do enunciado)
     print("Conferencia:")
     for tabela, esperado in [("fato_item_contratado", 6126), ("dim_orgao", 363), ("dim_fornecedor", 2652),
                              ("dim_modalidade", 7), ("dim_localidade", 27)]:
         # COMPLETE: conte as linhas da tabela com SELECT COUNT(*)
-        n = banco.consultar(con, f"SELECT ____ FROM {tabela}")[0][0]
+        n = banco.consultar(con, f"SELECT COUNT(*) FROM {tabela}")[0][0]
         print(f"   {tabela}: {n} (esperado {esperado}) -> {'OK' if n == esperado else 'DIVERGENTE'}")
     con.close()
 

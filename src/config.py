@@ -33,6 +33,6 @@ MYSQL_CONFIG = {
     "host": os.environ.get("MYSQL_HOST", "localhost"),
     "port": int(os.environ.get("MYSQL_PORT", "3306")),
     "user": os.environ.get("MYSQL_USER", "root"),
-    "password": os.environ.get("MYSQL_PASSWORD", ""),
+    "password": os.environ.get("MYSQL_PASSWORD", "P!nkwater12"),
 }
 MYSQL_DATABASE = os.environ.get("MYSQL_DATABASE", "pncp_controladoria")

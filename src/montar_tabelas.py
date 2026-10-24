@@ -39,21 +39,21 @@ def main():
     # --- compras.csv ---
     # .map(funcao) aplica a funcao em cada linha da coluna.   Regra 10: o CNPJ do orgao e de pessoa juridica ("PJ")
     # COMPLETE: o segundo argumento de limpar_documento e o tipo de pessoa; aqui e sempre "PJ"
-    compras["cnpj_orgao"] = compras["cnpj_orgao"].map(lambda v: limpeza.limpar_documento(v, ____))
+    compras["cnpj_orgao"] = compras["cnpj_orgao"].map(lambda v: limpeza.limpar_documento(v, "PJ"))
     # COMPLETE: o nome do orgao deve ser padronizado (maiusculas etc.): passe a funcao limpeza.padronizar_nome (sem parenteses)
-    compras["nome_orgao"] = compras["razao_social_orgao"].map(____)
+    compras["nome_orgao"] = compras["razao_social_orgao"].map(limpeza.padronizar_nome)
     compras["uf_sigla"] = compras["uf_sigla"].map(limpeza.padronizar_nome)
     compras["uf_nome"] = compras["uf_nome"].map(limpeza.padronizar_nome)
     # Regra 11: o arquivo nao traz a regiao; busque no dicionario REGIAO pela sigla da UF
     # COMPLETE: .map(REGIAO) troca cada sigla (ex.: "DF") pela regiao ("Centro-Oeste")
-    compras["regiao"] = compras["uf_sigla"].map(____)
+    compras["regiao"] = compras["uf_sigla"].map(REGIAO)
     compras["poder"] = compras["poder_id"].map(PODER).fillna("Não informado")
     compras["modalidade_id"] = compras["modalidade_id"].astype(int)
     # Regra 9: o nome da modalidade vem do codigo (modalidade_id), nao do texto do arquivo
     # COMPLETE: use .map(MODALIDADES) na coluna modalidade_id
-    compras["nome_modalidade"] = compras["modalidade_id"].map(____)
+    compras["nome_modalidade"] = compras["modalidade_id"].map(MODALIDADES)
     # COMPLETE: converta a data de publicacao com a sua funcao limpeza.converter_data
-    compras["data_publicacao"] = compras["data_publicacao"].map(____)
+    compras["data_publicacao"] = compras["data_publicacao"].map(limpeza.converter_data)
     compras["objeto_compra"] = compras["objeto_compra"].map(limpeza.limpar_texto)
 
     # --- itens.csv ---
@@ -61,9 +61,9 @@ def main():
     itens["material_ou_servico"] = itens["material_ou_servico"].map(limpeza.limpar_texto)
     # Regra 12: numeros em texto -> numero. COMPLETE: use limpeza.converter_numero
     for coluna in ["quantidade", "valor_unitario_estimado"]:
-        itens[coluna] = itens[coluna].map(____)
+        itens[coluna] = itens[coluna].map(limpeza.converter_numero)
     # "sigiloso" vem como texto "True"/"False". COMPLETE: compare o texto em minusculas (.str.lower()) com "true"
-    itens["sigiloso"] = itens["sigiloso"].str.lower() == ____
+    itens["sigiloso"] = itens["sigiloso"].str.lower() == "true"
     itens["numero_item"] = itens["numero_item"].astype(int)
 
     # --- resultados.csv ---
@@ -72,33 +72,33 @@ def main():
     resultados["porte"] = resultados["porte"].map(limpeza.limpar_texto)
     # O CNPJ/CPF do fornecedor depende do tipo da pessoa, que esta na coluna tipo_pessoa (PJ, PF ou PE)
     # COMPLETE: passe o tipo da linha (a variavel tipo) como segundo argumento
-    resultados["ni_fornecedor"] = [limpeza.limpar_documento(ni, ____)
+    resultados["ni_fornecedor"] = [limpeza.limpar_documento(ni, tipo)
                                    for ni, tipo in zip(resultados["ni_fornecedor"], resultados["tipo_pessoa"])]
     for coluna in ["quantidade_homologada", "valor_unitario_homologado"]:
         resultados[coluna] = resultados[coluna].map(limpeza.converter_numero)
     resultados["data_resultado"] = resultados["data_resultado"].map(limpeza.converter_data)
     # Resultado cancelado = a coluna data_cancelamento esta preenchida. COMPLETE: compare com o texto vazio ""
-    resultados["cancelado"] = resultados["data_cancelamento"].str.strip() != ____
+    resultados["cancelado"] = resultados["data_cancelamento"].str.strip() != ""
 
     # =========================================================================================
     # ETAPA 2 - UM VENCEDOR POR ITEM  (regra 2)
     # =========================================================================================
     # COMPLETE: fique so com os resultados que NAO estao cancelados. O til (~) inverte True/False: ~resultados["cancelado"]
-    resultados = resultados[____].copy()
+    resultados = resultados[~resultados["cancelado"]].copy()
     # ordem 1 = vencedor. Quando a ordem vem vazia, ela vale 1. COMPLETE: preencha os vazios (fillna) com 1
-    resultados["ordem"] = pd.to_numeric(resultados["ordem_classificacao_srp"], errors="coerce").fillna(____)
+    resultados["ordem"] = pd.to_numeric(resultados["ordem_classificacao_srp"], errors="coerce").fillna(1)
     resultados["sequencial"] = pd.to_numeric(resultados["sequencial_resultado"], errors="coerce").fillna(1)
     # Ordena para o vencedor ficar em primeiro: por item, depois pela ordem, depois pelo sequencial (desempate)
     resultados = resultados.sort_values(["numero_controle_pncp", "numero_item", "ordem", "sequencial"])
     # COMPLETE: mantenha so a PRIMEIRA linha de cada item. Metodo: resultados.drop_duplicates([colunas que identificam o item])
-    resultados = resultados.____(["numero_controle_pncp", "numero_item"])
+    resultados = resultados.drop_duplicates(["numero_controle_pncp", "numero_item"])
 
     # =========================================================================================
     # ETAPA 3 - JUNTAR OS 3 ARQUIVOS: SO ENTRAM ITENS COM RESULTADO  (regra 3)
     # =========================================================================================
     # merge junta tabelas pelas colunas em comum. how="inner" fica so com o que existe nos DOIS lados.
     # COMPLETE: escreva how="inner" na primeira junção (itens que nao tem resultado ficam de fora)
-    fato = itens.merge(resultados, on=["numero_controle_pncp", "numero_item"], how=____)
+    fato = itens.merge(resultados, on=["numero_controle_pncp", "numero_item"], how="inner")
     fato = fato.merge(compras, on="numero_controle_pncp")
     print(f"Itens com resultado, antes de rejeitar: {len(fato)}")
 
@@ -109,9 +109,9 @@ def main():
     qtd_homologada = fato["quantidade_homologada"]
     # COMPLETE: .where(condicao, outro) mantem o valor onde a condicao e verdadeira e usa "outro" onde e falsa.
     # Queremos a quantidade homologada quando ela for maior que 0; senao a quantidade do item. Condicao: qtd_homologada > 0
-    fato["quantidade"] = qtd_homologada.where(____, fato["quantidade"])
+    fato["quantidade"] = qtd_homologada.where(qtd_homologada > 0, fato["quantidade"])
     # COMPLETE: valor total estimado = valor unitario estimado x quantidade (round(2) arredonda em centavos)
-    fato["valor_total_estimado"] = (____).round(2)
+    fato["valor_total_estimado"] = (fato["valor_unitario_estimado"] * fato["quantidade"]).round(2)
     fato["valor_total_homologado"] = (fato["valor_unitario_homologado"] * fato["quantidade"]).round(2)
 
     # =========================================================================================
@@ -122,18 +122,18 @@ def main():
     rejeitado = (
         ~(fato["quantidade"] > 0)                          # quantidade vazia ou <= 0
         # COMPLETE: valor unitario ESTIMADO ausente ou <= 0
-        | ____
+        | ~(fato["valor_unitario_estimado"] > 0)           # valor unitario estimado ausente ou <= 0
         | ~(fato["valor_unitario_homologado"] > 0)         # valor unitario homologado ausente ou <= 0
         | fato["sigiloso"]                                 # orcamento sigiloso
         # COMPLETE: valor total estimado menor que R$ 1  (use est)
-        | ____
+        | (est < 1)
         # COMPLETE: valor total homologado mais de 1000 vezes o estimado (use hom e est)
-        | ____
+        | (hom > est * 1000)
         | (est > 1e12) | (hom > 1e12)                      # valores acima de R$ 1 trilhao (estouram o DECIMAL do banco)
     )
     print(f"Itens rejeitados (nao entram na fato): {rejeitado.sum()}   (prova real: 99)")
     # COMPLETE: fique so com os itens NAO rejeitados (use ~rejeitado)
-    fato = fato[____].copy()
+    fato = fato[~rejeitado].copy()
 
     # =========================================================================================
     # ETAPA 6 - COMPARAVEL E ECONOMIA  (regra 6)
@@ -142,10 +142,10 @@ def main():
     razao = hom / est
     # Comparavel = NAO e Credenciamento (modalidade 12) E a razao homologado/estimado esta entre 0,1 e 10.
     # COMPLETE: modalidade diferente de 12;  razao.between(0.1, 10) ja esta escrito logo depois
-    fato["comparavel"] = ((fato["modalidade_id"] != ____) & razao.between(____)).astype(int)
+    fato["comparavel"] = ((fato["modalidade_id"] != 12) & razao.between(0.1, 10)).astype(int)
     # Economia = estimado - homologado, so nos itens comparaveis (nos demais vale 0)
     # COMPLETE: estimado menos homologado (use est e hom)
-    fato["economia_valor"] = (____).where(fato["comparavel"] == 1, 0.0).round(2)
+    fato["economia_valor"] = (est - hom).where(fato["comparavel"] == 1, 0.0).round(2)
 
     # =========================================================================================
     # ETAPA 7 - CRONOLOGIA  (regra 7)
@@ -153,12 +153,12 @@ def main():
     fato["data_homologacao"] = fato["data_resultado"]
     # Homologar ANTES de publicar e impossivel: a data de homologacao vira vazia (o item continua na fato)
     # COMPLETE: antes = a data de homologacao e menor que a data de publicacao
-    antes = ____
+    antes = fato["data_homologacao"] < fato["data_publicacao"]
     # COMPLETE: nas linhas "antes", coloque None (vazio) na data de homologacao
-    fato.loc[antes, "data_homologacao"] = ____
+    fato.loc[antes, "data_homologacao"] = None
     # ciclo = dias entre a publicacao e a homologacao (so quando existe homologacao)
     # COMPLETE: subtrair duas datas da um "intervalo"; o numero de dias esta em .days
-    fato["dias_ciclo"] = [(h - p).____ if h is not None and not pd.isna(h) else None
+    fato["dias_ciclo"] = [(h - p).days if h is not None and not pd.isna(h) else None
                           for h, p in zip(fato["data_homologacao"], fato["data_publicacao"])]
 
     # =========================================================================================
@@ -169,9 +169,9 @@ def main():
     eh_obra = texto.str.contains(r"\b(?:OBRAS?|CONSTRUÇÃO|CONSTRUCAO|REFORMA|ENGENHARIA)\b", regex=True)
     fato["perfil_gasto"] = "Bens"
     # COMPLETE: se o campo material_ou_servico comeca com "SERVI" (Servico), o perfil e "Serviços"
-    fato.loc[fato["material_ou_servico"].fillna("").str.upper().str.startswith(____), "perfil_gasto"] = "Serviços"
+    fato.loc[fato["material_ou_servico"].fillna("").str.upper().str.startswith("SERVI"), "perfil_gasto"] = "Serviços"
     # COMPLETE: nas linhas eh_obra, o perfil e "Obras e engenharia"
-    fato.loc[eh_obra, "perfil_gasto"] = ____
+    fato.loc[eh_obra, "perfil_gasto"] = "Obras e engenharia"
 
     # =========================================================================================
     # ETAPA 9 - AS 4 DIMENSOES, COM CHAVE SUBSTITUTA (sk_)  (secao 4.3 do enunciado)
@@ -183,13 +183,13 @@ def main():
 
     fato["ni_fornecedor"] = fato["ni_fornecedor"].fillna("NAO-INFORMADO")
     # COMPLETE: uma linha por fornecedor: drop_duplicates pela chave natural "ni_fornecedor"
-    dim_fornecedor = fato.____("ni_fornecedor")[["ni_fornecedor", "nome_fornecedor", "tipo_pessoa", "porte"]].reset_index(drop=True)
+    dim_fornecedor = fato.drop_duplicates("ni_fornecedor")[["ni_fornecedor", "nome_fornecedor", "tipo_pessoa", "porte"]].reset_index(drop=True)
     dim_fornecedor.insert(0, "sk_fornecedor", dim_fornecedor.index + 1)
     # COMPLETE: uma linha por modalidade: drop_duplicates pela chave natural "modalidade_id"
-    dim_modalidade = fato.drop_duplicates(____)[["modalidade_id", "nome_modalidade"]].reset_index(drop=True)
+    dim_modalidade = fato.drop_duplicates("modalidade_id")[["modalidade_id", "nome_modalidade"]].reset_index(drop=True)
     dim_modalidade.insert(0, "sk_modalidade", dim_modalidade.index + 1)
     # COMPLETE: uma linha por UF: drop_duplicates pela chave natural "uf_sigla"
-    dim_localidade = fato.drop_duplicates(____)[["uf_sigla", "uf_nome", "regiao"]].reset_index(drop=True)
+    dim_localidade = fato.drop_duplicates("uf_sigla")[["uf_sigla", "uf_nome", "regiao"]].reset_index(drop=True)
     dim_localidade.insert(0, "sk_localidade", dim_localidade.index + 1)
 
     # Troca a chave natural (CNPJ, sigla...) pela chave substituta (sk_) dentro da fato.
@@ -197,7 +197,7 @@ def main():
     for dim, chave, sk in [(dim_orgao, "cnpj_orgao", "sk_orgao"), (dim_fornecedor, "ni_fornecedor", "sk_fornecedor"),
                            (dim_modalidade, "modalidade_id", "sk_modalidade"), (dim_localidade, "uf_sigla", "sk_localidade")]:
         # COMPLETE: fato[sk] recebe a coluna chave da fato trocada pelo dicionario: fato[chave].map(dict(zip(dim[chave], dim[sk])))
-        fato[sk] = ____
+        fato[sk] = fato[chave].map(dict(zip(dim[chave], dim[sk])))
 
     colunas = ["numero_controle_pncp", "numero_item", "sk_orgao", "sk_fornecedor", "sk_modalidade", "sk_localidade",
                "data_publicacao", "data_homologacao", "descricao_item", "perfil_gasto", "quantidade",
