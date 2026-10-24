@@ -34,6 +34,8 @@ A aplicação segue uma arquitetura modular em camadas, integrando scripts de ET
 ├── .gitignore                # Arquivos ignorados pelo Git
 ├── requirements.txt          # Dependências Python
 └── README.md                 # Documentação oficial do projeto
+.
+````
 
 
 ## 📖 Dicionário da Base Bruta (`data/raw/`) (Sprint 0)
