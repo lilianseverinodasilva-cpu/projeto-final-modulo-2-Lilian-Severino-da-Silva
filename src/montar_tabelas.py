@@ -1,8 +1,6 @@
 """
 montar_tabelas.py - MONTAGEM DAS TABELAS DIMENSIONAIS E FATO (Sprint 3)
 ====================================================================
-Script para processamento dos dados brutos, aplicacao das regras de negocio
-da Controladoria e exportacao dos CSVs limpos em data/processed/.
 """
 
 import re
@@ -11,7 +9,7 @@ from src import config, limpeza
 
 
 def ler(nome, **opcoes):
-    """Le um CSV da pasta data/raw/ como string pura (dtype=str)."""
+    """Lê um CSV da pasta data/raw/ como string pura (dtype=str)."""
     return pd.read_csv(config.PASTA_RAW / f"{nome}.csv", dtype=str, keep_default_na=False, **opcoes)
 
 
@@ -29,40 +27,54 @@ def main():
     itens = ler("itens")
     resultados = ler("resultados")
 
-    # Padronizacao preventiva dos nomes das colunas de valor total
-    if "valor_total" in itens.columns and "valor_total_estimado" not in itens.columns:
-        itens["valor_total_estimado"] = itens["valor_total"]
+    # Mapeamento dinâmico de colunas nos arquivos brutos antes do merge
+    for col in itens.columns:
+        c_lower = col.lower().strip()
+        if c_lower in ["valor_total", "valor_estimado_total", "valor_total_estimado", "valor_estimado"]:
+            itens = itens.rename(columns={col: "valor_total_estimado"})
+        elif c_lower in ["valor_unitario", "valor_estimado_unitario", "valor_unitario_estimado"]:
+            itens = itens.rename(columns={col: "valor_unitario_estimado"})
+        elif c_lower in ["sigilo", "orcamento_sigiloso", "item_sigiloso", "indicador_sigilo"]:
+            itens = itens.rename(columns={col: "orcamento_sigiloso"})
 
-    if "valor_total" in resultados.columns and "valor_total_homologado" not in resultados.columns:
-        resultados["valor_total_homologado"] = resultados["valor_total"]
-    elif "valor_homologado" in resultados.columns and "valor_total_homologado" not in resultados.columns:
-        resultados["valor_total_homologado"] = resultados["valor_homologado"]
+    for col in resultados.columns:
+        c_lower = col.lower().strip()
+        if c_lower in ["valor_total", "valor_homologado", "valor_total_homologado", "valor_homologado_total"]:
+            resultados = resultados.rename(columns={col: "valor_total_homologado"})
+        elif c_lower in ["valor_unitario", "valor_unitario_homologado"]:
+            resultados = resultados.rename(columns={col: "valor_unitario_homologado"})
 
     # 2. Filtragem de resultados ativos (descarrega cancelados)
     res_validos = resultados[resultados["data_cancelamento"].str.strip() == ""].copy()
 
-    # Selecao do 1º colocado no SRP (desempate pelo menor sequencial_resultado)
+    # Seleção do 1º colocado no SRP
     res_validos["ordem_srp"] = res_validos["ordem_classificacao_srp"].apply(limpeza.converter_numero)
     res_validos["seq_res"] = res_validos["sequencial_resultado"].apply(limpeza.converter_numero)
     res_validos = res_validos.sort_values(by=["numero_controle_pncp", "numero_item", "ordem_srp", "seq_res"])
     vencedores = res_validos.drop_duplicates(subset=["numero_controle_pncp", "numero_item"], keep="first").copy()
 
-    # 3. Juncao (Merge) dos Itens com os Vencedores e Compras
-    itens_vencedores = itens.merge(vencedores, on=["numero_controle_pncp", "numero_item"], how="inner")
+    # 3. Junção (Merge) com sufixos explícitos
+    itens_vencedores = itens.merge(vencedores, on=["numero_controle_pncp", "numero_item"], how="inner", suffixes=("_item", "_res"))
     df_base = itens_vencedores.merge(compras, on="numero_controle_pncp", how="inner")
 
-    # Garantia de colunas essenciais
-    if "valor_total_estimado" not in df_base.columns and "valor_total_x" in df_base.columns:
-        df_base["valor_total_estimado"] = df_base["valor_total_x"]
-    if "valor_total_homologado" not in df_base.columns and "valor_total_y" in df_base.columns:
-        df_base["valor_total_homologado"] = df_base["valor_total_y"]
+    # Resolução unificada de colunas de valores pós-merge
+    def obter_coluna(df, lista_opcoes):
+        for op in lista_opcoes:
+            if op in df.columns:
+                return df[op]
+        return pd.Series("", index=df.index)
 
-    # 4. Aplicacao das funcoes de limpeza
+    col_v_tot_est = obter_coluna(df_base, ["valor_total_estimado", "valor_total_estimado_item", "valor_total_x", "valor_total"])
+    col_v_tot_hom = obter_coluna(df_base, ["valor_total_homologado", "valor_total_homologado_res", "valor_total_y", "valor_homologado"])
+    col_v_unit_est = obter_coluna(df_base, ["valor_unitario_estimado", "valor_unitario_estimado_item", "valor_unitario_x", "valor_unitario"])
+    col_v_unit_hom = obter_coluna(df_base, ["valor_unitario_homologado", "valor_unitario_homologado_res", "valor_unitario_y"])
+
+    # 4. Aplicação das funções de limpeza usando as séries resolvidas
     df_base["qtd"] = df_base["quantidade"].apply(limpeza.converter_numero)
-    df_base["v_unit_est"] = df_base["valor_unitario_estimado"].apply(limpeza.converter_numero)
-    df_base["v_tot_est"] = df_base["valor_total_estimado"].apply(limpeza.converter_numero)
-    df_base["v_unit_hom"] = df_base["valor_unitario_homologado"].apply(limpeza.converter_numero)
-    df_base["v_tot_hom"] = df_base["valor_total_homologado"].apply(limpeza.converter_numero)
+    df_base["v_unit_est"] = col_v_unit_est.apply(limpeza.converter_numero)
+    df_base["v_tot_est"] = col_v_tot_est.apply(limpeza.converter_numero)
+    df_base["v_unit_hom"] = col_v_unit_hom.apply(limpeza.converter_numero)
+    df_base["v_tot_hom"] = col_v_tot_hom.apply(limpeza.converter_numero)
 
     # Recalcula totais caso estejam zerados ou ausentes
     df_base["v_tot_est"] = df_base.apply(
@@ -72,8 +84,17 @@ def main():
         lambda r: r["qtd"] * r["v_unit_hom"] if (r["v_tot_hom"] == 0 or pd.isna(r["v_tot_hom"])) else r["v_tot_hom"], axis=1
     )
 
-    # 5. Regra 4: Filtro de Itens Rejeitados (Invalidos)
-    sigiloso = df_base["orcamento_sigiloso"].astype(str).str.upper().str.strip().isin(["1", "SIM", "TRUE", "S"])
+    # 5. Regra 4: Filtro de Itens Rejeitados (Inválidos)
+    col_sigilo = None
+    for c in ["orcamento_sigiloso", "sigilo", "item_sigiloso", "indicador_sigilo", "orcamento_sigiloso_item"]:
+        if c in df_base.columns:
+            col_sigilo = c
+            break
+
+    if col_sigilo:
+        sigiloso = df_base[col_sigilo].astype(str).str.upper().str.strip().isin(["1", "SIM", "TRUE", "S"])
+    else:
+        sigiloso = pd.Series(False, index=df_base.index)
     
     rejeitado = (
         (df_base["qtd"] <= 0) |
@@ -131,8 +152,7 @@ def main():
     fato["perfil_gasto"] = fato.apply(classificar_perfil, axis=1)
     fato["descricao_item"] = fato["descricao"].apply(limpeza.limpar_texto)
 
-    # 9. Construcao das Tabelas Dimensionais
-    # Dimensao Orgao
+    # 9. Construção das Tabelas Dimensionais
     dim_orgao = fato[["cnpj_orgao", "razao_social_orgao", "poder_id"]].drop_duplicates().copy()
     dim_orgao["cnpj_orgao"] = dim_orgao["cnpj_orgao"].apply(lambda x: limpeza.limpar_documento(x, "PJ"))
     dim_orgao["nome_orgao"] = dim_orgao["razao_social_orgao"].apply(limpeza.padronizar_nome)
@@ -143,7 +163,6 @@ def main():
     dim_orgao["sk_orgao"] = dim_orgao.index + 1
     dim_orgao = dim_orgao[["sk_orgao", "cnpj_orgao", "nome_orgao", "poder"]]
 
-    # Dimensao Fornecedor
     dim_fornec = fato[["ni_fornecedor", "nome_fornecedor", "tipo_pessoa", "porte"]].drop_duplicates().copy()
     dim_fornec["tipo_pessoa"] = dim_fornec["tipo_pessoa"].astype(str).str.upper().str.strip()
     dim_fornec["ni_fornecedor"] = dim_fornec.apply(lambda r: limpeza.limpar_documento(r["ni_fornecedor"], r["tipo_pessoa"]), axis=1)
@@ -153,7 +172,6 @@ def main():
     dim_fornec["sk_fornecedor"] = dim_fornec.index + 1
     dim_fornec = dim_fornec[["sk_fornecedor", "ni_fornecedor", "nome_fornecedor", "tipo_pessoa", "porte"]]
 
-    # Dimensao Modalidade
     dim_mod = fato[["modalidade_id", "modalidade_nome"]].drop_duplicates().copy()
     dim_mod["modalidade_id"] = dim_mod["modalidade_id"].apply(limpeza.converter_numero).astype(int)
     dim_mod["nome_modalidade"] = dim_mod["modalidade_nome"].apply(limpeza.padronizar_nome)
@@ -161,7 +179,6 @@ def main():
     dim_mod["sk_modalidade"] = dim_mod.index + 1
     dim_mod = dim_mod[["sk_modalidade", "modalidade_id", "nome_modalidade"]]
 
-    # Dimensao Localidade
     mapa_regiao = {
         'AC': 'Norte', 'AL': 'Nordeste', 'AP': 'Norte', 'AM': 'Norte', 'BA': 'Nordeste',
         'CE': 'Nordeste', 'DF': 'Centro-Oeste', 'ES': 'Sudeste', 'GO': 'Centro-Oeste',
