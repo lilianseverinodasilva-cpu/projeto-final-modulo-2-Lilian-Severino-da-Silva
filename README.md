@@ -22,11 +22,11 @@
 
    * 4.6. [Sprint 6: Relatório Executivo e Dashboard no Power BI](#46-sprint-6-relatorio-executivo-e-dashboard-no-power-bi)
 
-   * 4.7. [Desafios Técnicos Superados Durante a Execução](#47-desafios-tecnicos-superados-durante-a-execucao)
+5. [Desafios Técnicos Superados Durante a Execução](#47-desafios-tecnicos-superados-durante-a-execucao)
 
-   * 4.8. [Prova Real e Validação de Resultados](#48-prova-real-e-validacao-de-resultados)
+6. [Prova Real e Validação de Resultados](#48-prova-real-e-validacao-de-resultados)
 
-5. [Instruções de Reprodução e Execução](#5-instrucoes-de-reproducao-e-execucao)
+7. [Instruções de Reprodução e Execução](#5-instrucoes-de-reproducao-e-execucao)
 
 ## 1. Contextualização do Projeto
 
@@ -159,7 +159,8 @@ Construção do painel interativo (`powerbi/pncp_analise_2.pbix`) integrado ao M
   
   ```
 
-### 4.7. Desafios Técnicos Superados Durante a Execução
+
+## 5. Desafios Técnicos Superados Durante a Execução
 
 * **Diretórios Inexistentes (`OSError`)**: Resolvido com criação dinâmica via `Path.mkdir(parents=True, exist_ok=True)`.
 
@@ -171,7 +172,7 @@ Construção do painel interativo (`powerbi/pncp_analise_2.pbix`) integrado ao M
 
 * **Renderização Geográfica (UFs)**: Ajuste do Shape Map para consumir estritamente a sigla de 2 letras (`uf_sigla`), corrigindo falhas de acentuação nos nomes dos estados.
 
-### 4.8. Prova Real e Validação de Resultados
+## 6. Prova Real e Validação de Resultados
 
 Comparação e validação de 100% dos indicadores obtidos pela esteira analítica contra o gabarito de controle:
 
@@ -189,7 +190,7 @@ Comparação e validação de 100% dos indicadores obtidos pela esteira analíti
 | Ciclo Médio / Máximo (Dias) | 48,1 / 611 dias | 48,1 / 611 dias | ✅ Exato | 
 | Perfil do Gasto (% Volume) | Obras 60,8% · Servicos 36,6% · Bens 2,6% | Obras 60,8% · Servicos 36,6% · Bens 2,6% | ✅ Exato | 
 
-## 5. Instruções de Reprodução e Execução
+## 7. Instruções de Reprodução e Execução
 
 1. **Configurar o Ambiente Virtual Python**:
 
