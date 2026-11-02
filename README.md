@@ -113,13 +113,13 @@ O script `src/montar_tabelas.py` consolida os dados limpos em `data/processed/` 
 4. **Regra de Comparabilidade**: Trava para certames com disputa (exclui *Credenciamento* e razões fora do intervalo \[0,1; 10,0\]).
 
 5. **Estruturação Dimensional**: Geração das tabelas `dim_orgao`, `dim_fornecedor`, `dim_modalidade`, `dim_localidade` e `fato_item_contratado` com chaves substitutas (`sk_`).
-
-### 4.4. Sprint 4: Carga Automatizada e DW Relacional no MySQL
-
+   
 Ao final, a arquitetura em Star Schema fica assim:
 
 <img width="1083" height="677" alt="Star Schema" src="https://github.com/user-attachments/assets/b86841a3-ea40-44f3-8a57-7af1ed3b9959" />
 
+
+### 4.4. Sprint 4: Carga Automatizada e DW Relacional no MySQL
 
 Persistência relacional gerenciada por `src/carregar.py`:
 
