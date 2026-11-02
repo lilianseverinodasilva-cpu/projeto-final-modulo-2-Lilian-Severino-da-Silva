@@ -20,12 +20,11 @@
 9. [Apresentação em Vídeo](#9-apresentacao-em-video)
 
 
----
 ## 1. Contextualização do Projeto
 
 Este projeto foi criado como parte integrante da avaliação do Módulo 2 do curso de Análise de Dados com Python, oferecido pelo SCTec em parceria com o Senai/SC. Ele constrói uma esteira analítica ponta a ponta (End-to-End) para auditar, sanitizar, modelar e visualizar dados brutos de contratações públicas federais extraídos do Portal Nacional de Contratações Públicas (PNCP) referentes a 2025. O objetivo é fornecer subsídios técnicos para órgãos de controle na identificação de gargalos operacionais, indícios de sobrepreço, concentração atípica de contratos, morosidade licitatória e baixa competitividade.
 
----
+
 ## 2. Arquitetura da Solução e Estrutura de Pastas
 
 A esteira integra scripts de ETL em Python, Data Warehouse (Star Schema) no MySQL e relatório executivo no Power BI:
@@ -56,7 +55,6 @@ A esteira integra scripts de ETL em Python, Data Warehouse (Star Schema) no MySQ
 
 ```
 
----
 ## 3. Dicionário dos Dados Brutos
 
 A camada de dados brutos (`data/raw/`) é composta por três arquivos relacionáveis por `numero_controle_pncp` e `numero_item`:
@@ -74,7 +72,7 @@ A camada de dados brutos (`data/raw/`) é composta por três arquivos relacioná
 | Textos gerais | Nulos disfarçados ("N/A", "NULL", "-", "SEM INFORMACAO") | Conversão para `None` / `NULL` nativo do banco de dados | `limpar_texto` (`limpeza.py`) |
 | Nomes de órgãos/fornecedores | Problemas de encoding (`Latin-1`) e espaços extras | Conversão para UTF-8, `.strip()` e normalização em maiúsculas | `padronizar_nome` (`limpeza.py`) |
 
----
+
 ## 4. Desenvolvimento do Projeto e Rastreabilidade por Sprints
 
 O ciclo de desenvolvimento da esteira analítica foi gerenciado sob a metodologia ágil Kanban via GitHub Projects, dividido em 8 etapas/sprints de entrega incremental.
@@ -89,6 +87,7 @@ O ciclo de desenvolvimento da esteira analítica foi gerenciado sob a metodologi
 <img width="1882" height="627" alt="Sprints" src="https://github.com/user-attachments/assets/b023f593-fe58-42ff-b4bb-9aa48f060cbe" />
 
 
+
 ### 4.2. Sprint 1 & 2: Auditoria e Sanitização de Dados (EDA & Engenharia)
 
 A fase exploratória (`reports/inspecao.ipynb`) diagnosticou as anomalias da base bruta, tratadas pelas funções puras em `src/limpeza.py`:
@@ -99,6 +98,7 @@ A fase exploratória (`reports/inspecao.ipynb`) diagnosticou as anomalias da bas
 * **Nulos Disfarçados (`limpar_texto`)**: Mapeamento de textos "zumbis" (`"N/A"`, `"NULL"`, `"-"`) e conversão para `None`/`NULL`.
 * **Encoding e Texto (`padronizar_nome`)**: Correção de encoding (`Latin-1` -> `UTF-8`) e normalização em maiúsculas.
 * **Autoteste Integrado**: 100% de aprovação nos 54 casos de teste de borda executados via `python -m src.limpeza`.
+
   
 
 ### 4.3. Sprint 3: Regras de Negócio e Montagem do Star Schema (ETL)
@@ -114,6 +114,7 @@ O script `src/montar_tabelas.py` consolida os dados limpos em `data/processed/` 
 Ao final, a arquitetura em Star Schema fica assim:
 
 <img width="1083" height="677" alt="Star Schema" src="https://github.com/user-attachments/assets/b86841a3-ea40-44f3-8a57-7af1ed3b9959" />
+
 
 
 ### 4.4. Sprint 4: Carga Automatizada e DW Relacional no MySQL
@@ -136,7 +137,7 @@ Consultas consolidadas em `sql/02_perguntas.sql` utilizando agregações pondera
 * **P5 (Distribuição Regional)**: Sudeste concentrou a maior fatia orçamentária, com variações significativas de desconto médio por UF.
 * **P6 (Perfil dos Gastos)**: Consolidação do volume homologado em **Obras/Engenharia (60,8%)**, **Serviços (36,6%)** e **Bens (2,6%)**.
 
----
+
 ### 4.6. Sprint 6: Relatório Executivo e Dashboard no Power BI
 
 Construção do painel interativo (`powerbi/pncp_analise_2.pbix`) integrado ao MySQL:
@@ -156,7 +157,7 @@ Construção do painel interativo (`powerbi/pncp_analise_2.pbix`) integrado ao M
   
   ```
 
----
+
 ## 5. Desafios Técnicos Superados Durante a Execução
 
 * **Diretórios Inexistentes (`OSError`)**: Resolvido com criação dinâmica via `Path.mkdir(parents=True, exist_ok=True)`.
@@ -165,7 +166,7 @@ Construção do painel interativo (`powerbi/pncp_analise_2.pbix`) integrado ao M
 * **Mapeamento da Categoria "Bens"**: Padronização dos termos originais (`Material`/`Compras`) via `CASE WHEN` no SQL e coluna calculada `Perfil_Gasto_Visual` no DAX.
 * **Renderização Geográfica (UFs)**: Ajuste do Shape Map para consumir estritamente a sigla de 2 letras (`uf_sigla`), corrigindo falhas de acentuação nos nomes dos estados.
 
----
+
 ## 6. Prova Real e Validação de Resultados
 
 Comparação e validação de 100% dos indicadores obtidos pela esteira analítica contra o gabarito de controle:
@@ -184,7 +185,7 @@ Comparação e validação de 100% dos indicadores obtidos pela esteira analíti
 | Ciclo Médio / Máximo (Dias) | 48,1 / 611 dias | 48,1 / 611 dias | ✅ Exato | 
 | Perfil do Gasto (% Volume) | Obras 60,8% · Servicos 36,6% · Bens 2,6% | Obras 60,8% · Servicos 36,6% · Bens 2,6% | ✅ Exato | 
 
----
+
 ## 7. Instruções de Reprodução e Execução
 
 1. **Configurar o Ambiente Virtual Python**:
@@ -216,7 +217,7 @@ Comparação e validação de 100% dos indicadores obtidos pela esteira analíti
    
    ```
 
----
+
 ## 8. Melhorias Futuras
 
 - **Orquestração Automatizada**: Implementação de DAGs no Apache Airflow para agendamento automático da extração e carga diária da API do PNCP.
@@ -224,7 +225,7 @@ Comparação e validação de 100% dos indicadores obtidos pela esteira analíti
 - **Detecção de Anomalias com ML**: Aplicação de algoritmos de Machine Learning (Isolation Forest / Outlier Detection) para identificação automática de indícios de sobrepreço e cartel em certames públicos.
 - **Alerta em Tempo Real**: Envio automático de relatórios e alertas de desvio de ciclo no Microsoft Teams / Telegram para a equipe de auditoria da Controladoria.
 
----
+
 ## 9. Apresentação em Vídeo
 
 O vídeo com a demonstração executiva do projeto, explicação do pipeline de dados e navegação pelo relatório do Power BI está disponível no link abaixo:
