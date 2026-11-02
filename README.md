@@ -28,10 +28,13 @@
 
 7. [Instruções de Reprodução e Execução](#5-instrucoes-de-reproducao-e-execucao)
 
+
+---
 ## 1. Contextualização do Projeto
 
 Este projeto constrói uma esteira analítica ponta a ponta (End-to-End) para auditar, sanitizar, modelar e visualizar dados brutos de contratações públicas federais extraídos do Portal Nacional de Contratações Públicas (PNCP) referentes a 2025. O objetivo é fornecer subsídios técnicos para órgãos de controle na identificação de gargalos operacionais, indícios de sobrepreço, concentração atípica de contratos, morosidade licitatória e baixa competitividade.
 
+---
 ## 2. Arquitetura da Solução e Estrutura de Pastas
 
 A esteira integra scripts de ETL em Python, Data Warehouse (Star Schema) no MySQL e relatório executivo no Power BI:
@@ -62,6 +65,7 @@ A esteira integra scripts de ETL em Python, Data Warehouse (Star Schema) no MySQ
 
 ```
 
+---
 ## 3. Dicionário dos Dados Brutos
 
 A camada de dados brutos (`data/raw/`) é composta por três arquivos relacionáveis por `numero_controle_pncp` e `numero_item`:
@@ -72,9 +76,11 @@ A camada de dados brutos (`data/raw/`) é composta por três arquivos relacioná
 
 * `resultados.csv` (15.896 linhas): Registros de fornecedores classificados por item (CNPJ/CPF, valores homologados e cancelamentos).
 
+---
 ## 4. Desenvolvimento do Projeto e Rastreabilidade por Sprints
 
 O ciclo de desenvolvimento da esteira analítica foi gerenciado sob a metodologia ágil Kanban via GitHub Projects, dividido em 8 etapas/sprints de entrega incremental.
+
 
 ### 4.1. Sprint 0: Planejamento, Arquitetura e Configuração
 
@@ -83,6 +89,7 @@ O ciclo de desenvolvimento da esteira analítica foi gerenciado sob a metodologi
 * Configuração das variáveis de ambiente (`.env.example`) e centralização das configurações em `src/config.py`.
 
 * Mapeamento inicial das 6 perguntas de negócio da Controladoria Geral.
+
 
 ### 4.2. Sprint 1 & 2: Auditoria e Sanitização de Dados (EDA & Engenharia)
 
@@ -99,6 +106,7 @@ A fase exploratória (`reports/inspecao.ipynb`) diagnosticou as anomalias da bas
 * **Encoding e Texto (`padronizar_nome`)**: Correção de encoding (`Latin-1` -> `UTF-8`) e normalização em maiúsculas.
 
 * **Autoteste Integrado**: 100% de aprovação nos 54 casos de teste de borda executados via `python -m src.limpeza`.
+  
 
 ### 4.3. Sprint 3: Regras de Negócio e Montagem do Star Schema (ETL)
 
@@ -129,6 +137,7 @@ Persistência relacional gerenciada por `src/carregar.py`:
 
 * **Garantia de Integridade**: Carga estruturada alimentando primeiro as dimensões e finalizando na tabela fato.
 
+
 ### 4.5. Sprint 5: Consultas Analíticas e Perguntas de Negócio (SQL)
 
 Consultas consolidadas em `sql/02_perguntas.sql` utilizando agregações ponderadas (`SUM ÷ SUM`) e tratamento com `NULLIF`:
@@ -145,6 +154,7 @@ Consultas consolidadas em `sql/02_perguntas.sql` utilizando agregações pondera
 
 * **P6 (Perfil dos Gastos)**: Consolidação do volume homologado em **Obras/Engenharia (60,8%)**, **Serviços (36,6%)** e **Bens (2,6%)**.
 
+---
 ### 4.6. Sprint 6: Relatório Executivo e Dashboard no Power BI
 
 Construção do painel interativo (`powerbi/pncp_analise_2.pbix`) integrado ao MySQL:
@@ -164,7 +174,7 @@ Construção do painel interativo (`powerbi/pncp_analise_2.pbix`) integrado ao M
   
   ```
 
-
+---
 ## 5. Desafios Técnicos Superados Durante a Execução
 
 * **Diretórios Inexistentes (`OSError`)**: Resolvido com criação dinâmica via `Path.mkdir(parents=True, exist_ok=True)`.
@@ -177,6 +187,7 @@ Construção do painel interativo (`powerbi/pncp_analise_2.pbix`) integrado ao M
 
 * **Renderização Geográfica (UFs)**: Ajuste do Shape Map para consumir estritamente a sigla de 2 letras (`uf_sigla`), corrigindo falhas de acentuação nos nomes dos estados.
 
+---
 ## 6. Prova Real e Validação de Resultados
 
 Comparação e validação de 100% dos indicadores obtidos pela esteira analítica contra o gabarito de controle:
@@ -195,6 +206,7 @@ Comparação e validação de 100% dos indicadores obtidos pela esteira analíti
 | Ciclo Médio / Máximo (Dias) | 48,1 / 611 dias | 48,1 / 611 dias | ✅ Exato | 
 | Perfil do Gasto (% Volume) | Obras 60,8% · Servicos 36,6% · Bens 2,6% | Obras 60,8% · Servicos 36,6% · Bens 2,6% | ✅ Exato | 
 
+---
 ## 7. Instruções de Reprodução e Execução
 
 1. **Configurar o Ambiente Virtual Python**:
@@ -226,4 +238,6 @@ Comparação e validação de 100% dos indicadores obtidos pela esteira analíti
    
    ```
 
+
+---
 Criado por Lilian Severino da Silva
