@@ -8,19 +8,11 @@
 5. [Regras de Negócio e Montagem da Fato/Dimensões (Sprint 3)](#5-regras-de-negocio-e-montagem-da-fatodimensoes-sprint-3)
 6. [Carga Automatizada e Star Schema no MySQL (Sprint 4)](#6-carga-automatizada-e-star-schema-no-mysql-sprint-4)
 7. [Consultas Analíticas e Perguntas de Negócio em SQL (Sprint 5)](#7-consultas-analiticas-e-perguntas-de-negocio-em-sql-sprint-5)
-<<<<<<< HEAD
 8. [Relatório Executivo e Dashboard no Power BI (Sprint 6)](#8-relatorio-executivo-e-dashboard-no-power-bi-sprint-6)
 9. [Desafios Técnicos e Soluções Adotadas](#9-desafios-tecnicos-e-solucoes-adotadas)
 10. [Conferência de Resultados e Prova Real](#10-conferencia-de-resultados-e-prova-real)
 11. [Planejamento de Sprints e Rastreabilidade](#11-planejamento-de-sprints-e-rastreabilidade)
 12. [Instruções de Reprodução e Execução](#12-instrucoes-de-reproducao-e-execucao)
-=======
-8. 
-9. [Desafios Técnicos e Soluções Adotadas](#8-desafios-tecnicos-e-solucoes-adotadas)
-10. [Conferência de Resultados e Prova Real](#9-conferencia-de-resultados-e-prova-real)
-11. [Planejamento de Sprints e Rastreabilidade](#10-planejamento-de-sprints-e-rastreabilidade)
-12. [Instruções de Reprodução e Execução](#11-instrucoes-de-reproducao-e-execucao)
->>>>>>> c165398b72501b893a75e9933426c4d88d79b2ab
 
 ---
 
@@ -109,7 +101,6 @@ As consultas estruturadas em `sql/02_perguntas.sql` respondem às questões cent
 
 ---
 
-<<<<<<< HEAD
 ## 8. Relatório Executivo e Dashboard no Power BI (Sprint 6)
 O relatório interativo (`powerbi/pncp_analise_2.pbix`) consome o modelo relacional em Star Schema do MySQL e implementa 15+ medidas DAX otimizadas para responder às 6 perguntas de negócio com design profissional e foco executivo.
 
@@ -151,65 +142,9 @@ O relatório interativo (`powerbi/pncp_analise_2.pbix`) consome o modelo relacio
           "Outros"
       )
   ```
-=======
-## Relatório Executivo e Dashboard no Power BI (Sprint 6)
-O relatório interativo (powerbi/pncp_analise_2.pbix) consome o modelo relacional em Star Schema do MySQL e implementa 15+ medidas DAX otimizadas para responder às 6 perguntas de negócio com design profissional e foco executivo:
->>>>>>> c165398b72501b893a75e9933426c4d88d79b2ab
 
-* **Estrutura das Páginas do Relatório:**
-Página 1 - Visão Geral & Economia Global: KPIs de topo para Volume Homologado (R$ 8,04 Bi), Volume Estimado Comparável (R$ 6,86 Bi), Volume Homologado Comparável (R$ 5,87 Bi), Economia Nominal (R$ 992,86 Mi) e % de Economia (14,46%).
+---
 
-Página 2 - Concentração e Risco de Fornecedores: Gráfico de barras horizontais com o Top 10 fornecedores por volume financeiro e indicação de participação percentual sobre o orçamento global.
-
-Página 3 - Eficiência por Modalidade: Análise comparativa entre modalidades licitatórias com matriz de desconto e volume financeiro sob disputa.
-
-Página 4 - Tempo do Ciclo de Compras: Histograma e cartões com o tempo médio de ciclo (48,1 dias) e identificação das unidades compradoras com maior tempo entre a publicação do edital e a homologação.
-
-Página 5 - Distribuição Regional dos Gastos: Visual geográfico (Shape Map) integrado com a dimensão de localidade (dim_localidade[uf_sigla]), apresentando a distribuição financeira por estado e grande região.
-
-Página 6 - Perfil dos Gastos (Bens, Serviços e Obras): Gráfico de rosca e matriz executiva para visualização do volume homologado e percentual de economia nas três macrocategorias do setor público.
-
-** Principais Medidas DAX Implementadas:**
-Volume Total Homologado: Volume_Homologado = SUM(fato_item_contratado[valor_total_homologado])
-
-Economia Nominal Comparável: Economia_Nominal = CALCULATE(SUM(fato_item_contratado[economia_valor]), fato_item_contratado[comparavel] == 1)
-
-Percentual de Economia: Pct_Economia = DIVIDE([Economia_Nominal], CALCULATE(SUM(fato_item_contratado[valor_total_estimado]), fato_item_contratado[comparavel] == 1), 0)
-
-Ciclo Médio de Compras (Dias): Ciclo_Medio_Dias = AVERAGE(fato_item_contratado[dias_ciclo])
-
-Perfil de Gasto Visual (Tratamento de Rótulos):
-
-````
-Snippet de código
-Perfil_Gasto_Visual = 
-VAR _Texto = LOWER(TRIM(fato_item_contratado[perfil_gasto]))
-RETURN
-    SWITCH(
-        TRUE(),
-        CONTAINSSTRING(_Texto, "material") || CONTAINSSTRING(_Texto, "compra") || CONTAINSSTRING(_Texto, "bem"), "Bens",
-        CONTAINSSTRING(_Texto, "servico") || CONTAINSSTRING(_Texto, "serviço"), "Serviços",
-        CONTAINSSTRING(_Texto, "obra") || CONTAINSSTRING(_Texto, "engenharia"), "Obras",
-        "Outros"
-    )
-````
-    
-## 9. Desafios Técnicos e Soluções Adotadas
-Pasta de Destino Inexistente (OSError): Resolvido com a criação dinâmica de diretórios via Path.mkdir(parents=True, exist_ok=True) no Python.
-
-Execução de Módulos (ModuleNotFoundError): Padronização da execução modular via terminal a partir da raiz do projeto (python -m src.<modulo>).
-
-Erros de Tipagem no SQL (Error 1054): Adequação das consultas SQL aos nomes exatos das colunas da DDL e substituição de COUNT(f.id) por COUNT(*).
-
-Tratamento de Divisão por Zero em Percentuais: Aplicação sistemática de NULLIF(denominador, 0) nas consultas SQL e uso da função DIVIDE() no DAX para evitar inconsistências em categorias sem itens comparáveis.
-
-Mapeamento de Categoria "Bens" na API do PNCP: A palavra "Bens" era registrada como Material ou Compras na base original. Ajustado via CASE WHEN no SQL e coluna calculada DAX Perfil_Gasto_Visual.
-
-Compatibilidade do Mapa de Formas (UFs): Nomes de estados com acentuação causavam falhas no preenchimento do mapa vetorial. Resolvido com o uso estrito da coluna de siglas de 2 letras (uf_sigla — PI, CE, SP).
-
-10. Conferência de Resultados e Prova Real
-
-<<<<<<< HEAD
 ## 9. Desafios Técnicos e Soluções Adotadas
 - **Estrutura de Pastas Inexistente (`OSError`)**: Criada rotina para verificação e geração automática de diretórios via `Path.mkdir(parents=True, exist_ok=True)`.
 - **Importação de Módulos (`ModuleNotFoundError`)**: Padronizada a execução modular a partir do diretório raiz utilizando a flag de módulo (`python -m src.<modulo>`).
@@ -221,8 +156,6 @@ Compatibilidade do Mapa de Formas (UFs): Nomes de estados com acentuação causa
 ---
 
 ## 10. Conferência de Resultados e Prova Real
-=======
->>>>>>> c165398b72501b893a75e9933426c4d88d79b2ab
 A esteira de dados foi validada contra o gabarito oficial do projeto, obtendo 100% de paridade em todos os indicadores:
 
 | Indicador | Valor Esperado | Valor Obtido no Pipeline | Status |
