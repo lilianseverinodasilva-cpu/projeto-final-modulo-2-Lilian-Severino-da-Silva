@@ -157,6 +157,10 @@ Construção do painel interativo (`powerbi/pncp_analise_2.pbix`) integrado ao M
   
   ```
 
+O arquivo .pbix tem este visual:
+<img width="1197" height="672" alt="Dash - Visão Geral" src="https://github.com/user-attachments/assets/1d998a4b-31a5-476d-879f-ceb05173a072" />
+
+
 
 ## 5. Desafios Técnicos Superados Durante a Execução
 
