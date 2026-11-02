@@ -2,37 +2,29 @@
 
 ## Índice
 
+## Índice
+
 1. [Contextualização do Projeto](#1-contextualizacao-do-projeto)
-
 2. [Arquitetura da Solução e Estrutura de Pastas](#2-arquitetura-da-solucao-e-estrutura-de-pastas)
-
-3. [Dicionário dos Dados Brutos](#3-dicionario-dos-dados-brutos)
-
+3. [Dicionário dos Dados Brutos e Inconsistências Tratadas](#3-dicionario-dos-dados-brutos-e-inconsistencias-tratadas)
 4. [Desenvolvimento do Projeto e Rastreabilidade por Sprints](#4-desenvolvimento-do-projeto-e-rastreabilidade-por-sprints)
-
    * 4.1. [Sprint 0: Planejamento, Arquitetura e Configuração](#41-sprint-0-planejamento-arquitetura-e-configuracao)
-
    * 4.2. [Sprint 1 & 2: Auditoria e Sanitização de Dados (EDA & Engenharia)](#42-sprint-1--2-auditoria-e-sanitizacao-de-dados-eda--engenharia)
-
    * 4.3. [Sprint 3: Regras de Negócio e Montagem do Star Schema (ETL)](#43-sprint-3-regras-de-negocio-e-montagem-do-star-schema-etl)
-
    * 4.4. [Sprint 4: Carga Automatizada e DW Relacional no MySQL](#44-sprint-4-carga-automatizada-e-dw-relacional-no-mysql)
-
    * 4.5. [Sprint 5: Consultas Analíticas e Perguntas de Negócio (SQL)](#45-sprint-5-consultas-analiticas-e-perguntas-de-negocio-sql)
-
    * 4.6. [Sprint 6: Relatório Executivo e Dashboard no Power BI](#46-sprint-6-relatorio-executivo-e-dashboard-no-power-bi)
-
-5. [Desafios Técnicos Superados Durante a Execução](#47-desafios-tecnicos-superados-durante-a-execucao)
-
-6. [Prova Real e Validação de Resultados](#48-prova-real-e-validacao-de-resultados)
-
-7. [Instruções de Reprodução e Execução](#5-instrucoes-de-reproducao-e-execucao)
+5. [Desafios Técnicos Superados Durante a Execução](#5-desafios-tecnicos-superados-durante-a-execucao)
+6. [Prova Real e Validação de Resultados](#6-prova-real-e-validacao-de-resultados)
+7. [Instruções de Reprodução e Execução](#7-instrucoes-de-reproducao-e-execucao)
+8. [Melhorias Futuras](#8-melhorias-futuras)
+9. [Apresentação em Vídeo](#9-apresentacao-em-video)
 
 
 ---
 ## 1. Contextualização do Projeto
 
-Este projeto constrói uma esteira analítica ponta a ponta (End-to-End) para auditar, sanitizar, modelar e visualizar dados brutos de contratações públicas federais extraídos do Portal Nacional de Contratações Públicas (PNCP) referentes a 2025. O objetivo é fornecer subsídios técnicos para órgãos de controle na identificação de gargalos operacionais, indícios de sobrepreço, concentração atípica de contratos, morosidade licitatória e baixa competitividade.
+Este projeto foi criado como parte integrante da avaliação do Módulo 2 do curso de Análise de Dados com Python, oferecido pelo SCTec em parceria com o Senai/SC. Ele constrói uma esteira analítica ponta a ponta (End-to-End) para auditar, sanitizar, modelar e visualizar dados brutos de contratações públicas federais extraídos do Portal Nacional de Contratações Públicas (PNCP) referentes a 2025. O objetivo é fornecer subsídios técnicos para órgãos de controle na identificação de gargalos operacionais, indícios de sobrepreço, concentração atípica de contratos, morosidade licitatória e baixa competitividade.
 
 ---
 ## 2. Arquitetura da Solução e Estrutura de Pastas
@@ -69,12 +61,19 @@ A esteira integra scripts de ETL em Python, Data Warehouse (Star Schema) no MySQ
 ## 3. Dicionário dos Dados Brutos
 
 A camada de dados brutos (`data/raw/`) é composta por três arquivos relacionáveis por `numero_controle_pncp` e `numero_item`:
-
 * `compras.csv` (2.042 linhas): Cabeçalho dos certames licitatórios (órgãos, datas, modalidades e localidades).
-
 * `itens.csv` (7.077 linhas): Detalhamento dos itens licitados (descrição, quantidade e valores estimados).
-
 * `resultados.csv` (15.896 linhas): Registros de fornecedores classificados por item (CNPJ/CPF, valores homologados e cancelamentos).
+
+### 3.1. Dicionário de Inconsistências Tratadas
+
+| Campo | Anomalia Detectada | Tratamento Aplicado | Função / Módulo |
+| :--- | :--- | :--- | :--- |
+| `cnpj_orgao` / `ni_fornecedor` | Pontuações, traços, barras e falta de zeros | Remoção de não-numéricos e `.zfill()` (14 p/ CNPJ, 11 p/ CPF) | `limpar_documento` (`limpeza.py`) |
+| `valor_unitario_estimado` / `valor_total_homologado` | Texto com R$, vírgulas como milhar e decimais invertidos | Parser numérico Regex e conversão segura para `float` | `converter_numero` (`limpeza.py`) |
+| `data_publicacao_pncp` / `data_homologacao` | Formatos heterogêneos e homologações anteriores ao edital | Parsing iterativo multi-formato (`pd.to_datetime`) e anulação de datas inválidas | `converter_data` (`limpeza.py`) |
+| Textos gerais | Nulos disfarçados ("N/A", "NULL", "-", "SEM INFORMACAO") | Conversão para `None` / `NULL` nativo do banco de dados | `limpar_texto` (`limpeza.py`) |
+| Nomes de órgãos/fornecedores | Problemas de encoding (`Latin-1`) e espaços extras | Conversão para UTF-8, `.strip()` e normalização em maiúsculas | `padronizar_nome` (`limpeza.py`) |
 
 ---
 ## 4. Desenvolvimento do Projeto e Rastreabilidade por Sprints
@@ -84,11 +83,11 @@ O ciclo de desenvolvimento da esteira analítica foi gerenciado sob a metodologi
 
 ### 4.1. Sprint 0: Planejamento, Arquitetura e Configuração
 
-* Estruturação do repositório no GitHub, definição da arquitetura de diretórios e padrões de código (`.gitignore`, `requirements.txt`).
+- Estruturação do repositório no GitHub, definição da arquitetura de diretórios e padrões de código (`.gitignore`, `requirements.txt`).
+- Configuração das variáveis de ambiente (`.env.example`) e centralização das configurações em `src/config.py`.
+- Mapeamento inicial das 6 perguntas de negócio da Controladoria Geral.
 
-* Configuração das variáveis de ambiente (`.env.example`) e centralização das configurações em `src/config.py`.
-
-* Mapeamento inicial das 6 perguntas de negócio da Controladoria Geral.
+<img width="1882" height="627" alt="Sprints" src="https://github.com/user-attachments/assets/b023f593-fe58-42ff-b4bb-9aa48f060cbe" />
 
 
 ### 4.2. Sprint 1 & 2: Auditoria e Sanitização de Dados (EDA & Engenharia)
@@ -96,15 +95,10 @@ O ciclo de desenvolvimento da esteira analítica foi gerenciado sob a metodologi
 A fase exploratória (`reports/inspecao.ipynb`) diagnosticou as anomalias da base bruta, tratadas pelas funções puras em `src/limpeza.py`:
 
 * **Documentos (`limpar_documento`)**: Remoção de caracteres não numéricos e recomposição de zeros à esquerda (`.zfill()`) para CNPJ (14 dígitos) e CPF (11 dígitos).
-
 * **Valores Monetários (`converter_numero`)**: Parser para cifrões (`R$`), inversão de separadores decimais/milhares e tratamento de negativos.
-
 * **Inconsistências Temporais (`converter_data`)**: Parsing iterativo de datas e anulação de homologações anteriores à publicação.
-
 * **Nulos Disfarçados (`limpar_texto`)**: Mapeamento de textos "zumbis" (`"N/A"`, `"NULL"`, `"-"`) e conversão para `None`/`NULL`.
-
 * **Encoding e Texto (`padronizar_nome`)**: Correção de encoding (`Latin-1` -> `UTF-8`) e normalização em maiúsculas.
-
 * **Autoteste Integrado**: 100% de aprovação nos 54 casos de teste de borda executados via `python -m src.limpeza`.
   
 
@@ -113,13 +107,9 @@ A fase exploratória (`reports/inspecao.ipynb`) diagnosticou as anomalias da bas
 O script `src/montar_tabelas.py` consolida os dados limpos em `data/processed/` aplicando as diretrizes estratégicas:
 
 1. **Grão da Fato**: 1 linha por item de contratação (`numero_controle_pncp` + `numero_item`).
-
 2. **Vencedor por Item**: Descarte de cancelados e seleção do 1º colocado no SRP (desempate pelo menor `sequencial_resultado`).
-
 3. **Filtro de Itens Validados**: Manutenção apenas de itens homologados e remoção de registros inconsistentes (quantidade <= 0, orçamento sigiloso, estimado < R\$ 1,00 ou divergência > 1.000x).
-
 4. **Regra de Comparabilidade**: Trava para certames com disputa (exclui *Credenciamento* e razões fora do intervalo \[0,1; 10,0\]).
-
 5. **Estruturação Dimensional**: Geração das tabelas `dim_orgao`, `dim_fornecedor`, `dim_modalidade`, `dim_localidade` e `fato_item_contratado` com chaves substitutas (`sk_`).
    
 Ao final, a arquitetura em Star Schema fica assim:
@@ -132,9 +122,7 @@ Ao final, a arquitetura em Star Schema fica assim:
 Persistência relacional gerenciada por `src/carregar.py`:
 
 * **DDL Automatizado**: Execução do script `sql/01_criar_banco.sql` com criação da base `pncp_controladoria` e restrições de `PK`/`FK`.
-
 * **Inserção Otimizada**: Ingestão em lote via `executemany` com tratamento automático de conversão de `NaN` para `NULL`.
-
 * **Garantia de Integridade**: Carga estruturada alimentando primeiro as dimensões e finalizando na tabela fato.
 
 
@@ -143,15 +131,10 @@ Persistência relacional gerenciada por `src/carregar.py`:
 Consultas consolidadas em `sql/02_perguntas.sql` utilizando agregações ponderadas (`SUM ÷ SUM`) e tratamento com `NULLIF`:
 
 * **P1 (Economia Global)**: Economia de **R\$ 992.861.686,95** (**14,46%** de desconto global sobre itens comparáveis).
-
 * **P2 (Concentração & Risco)**: Top 10 fornecedores mapeados. O maior fornecedor isolado absorveu **R\$ 1,06 Bilhão** (13,18% de todo o orçamento contratado).
-
 * **P3 (Modalidades)**: O *Pregão Eletrônico* despontou como a modalidade de maior eficiência e volume financeiro disputado.
-
 * **P4 (Tempo de Ciclo)**: Tempo médio nacional de **48,1 dias** (máximo de 611 dias), identificando órgãos com gargalos operacionais superiores a 200 dias.
-
 * **P5 (Distribuição Regional)**: Sudeste concentrou a maior fatia orçamentária, com variações significativas de desconto médio por UF.
-
 * **P6 (Perfil dos Gastos)**: Consolidação do volume homologado em **Obras/Engenharia (60,8%)**, **Serviços (36,6%)** e **Bens (2,6%)**.
 
 ---
@@ -178,13 +161,9 @@ Construção do painel interativo (`powerbi/pncp_analise_2.pbix`) integrado ao M
 ## 5. Desafios Técnicos Superados Durante a Execução
 
 * **Diretórios Inexistentes (`OSError`)**: Resolvido com criação dinâmica via `Path.mkdir(parents=True, exist_ok=True)`.
-
 * **Módulos Python (`ModuleNotFoundError`)**: Padronizada execução via flag modular (`python -m src.<modulo>`).
-
 * **Tratamento de Divisão por Zero**: Uso sistemático de `NULLIF` no SQL e `DIVIDE()` no DAX.
-
 * **Mapeamento da Categoria "Bens"**: Padronização dos termos originais (`Material`/`Compras`) via `CASE WHEN` no SQL e coluna calculada `Perfil_Gasto_Visual` no DAX.
-
 * **Renderização Geográfica (UFs)**: Ajuste do Shape Map para consumir estritamente a sigla de 2 letras (`uf_sigla`), corrigindo falhas de acentuação nos nomes dos estados.
 
 ---
@@ -237,6 +216,22 @@ Comparação e validação de 100% dos indicadores obtidos pela esteira analíti
    python -m src.carregar         # Sprint 4: Criação do banco e carga no MySQL
    
    ```
+
+---
+## 8. Melhorias Futuras
+
+- **Orquestração Automatizada**: Implementação de DAGs no Apache Airflow para agendamento automático da extração e carga diária da API do PNCP.
+- **Pipeline CI/CD**: Automação dos testes unitários das funções de limpeza (`src/limpeza.py`) via GitHub Actions a cada *pull request*.
+- **Detecção de Anomalias com ML**: Aplicação de algoritmos de Machine Learning (Isolation Forest / Outlier Detection) para identificação automática de indícios de sobrepreço e cartel em certames públicos.
+- **Alerta em Tempo Real**: Envio automático de relatórios e alertas de desvio de ciclo no Microsoft Teams / Telegram para a equipe de auditoria da Controladoria.
+
+---
+## 9. Apresentação em Vídeo
+
+O vídeo com a demonstração executiva do projeto, explicação do pipeline de dados e navegação pelo relatório do Power BI está disponível no link abaixo:
+
+🎥 **[Assista à apresentação do projeto no YouTube / Loom](https://seu-link-do-video-aqui.com)**
+
 
 
 ---
