@@ -1,6 +1,5 @@
 # Esteira Analítica de Compras Públicas PNCP - Controladoria Geral
 
-## Índice
 
 ## Índice
 
