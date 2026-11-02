@@ -116,6 +116,11 @@ O script `src/montar_tabelas.py` consolida os dados limpos em `data/processed/` 
 
 ### 4.4. Sprint 4: Carga Automatizada e DW Relacional no MySQL
 
+Ao final, a arquitetura em Star Schema fica assim:
+
+<img width="1083" height="677" alt="Star Schema" src="https://github.com/user-attachments/assets/b86841a3-ea40-44f3-8a57-7af1ed3b9959" />
+
+
 Persistência relacional gerenciada por `src/carregar.py`:
 
 * **DDL Automatizado**: Execução do script `sql/01_criar_banco.sql` com criação da base `pncp_controladoria` e restrições de `PK`/`FK`.
