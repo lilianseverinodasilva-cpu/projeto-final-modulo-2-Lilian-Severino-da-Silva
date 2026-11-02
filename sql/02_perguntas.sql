@@ -111,10 +111,15 @@ GROUP BY loc.uf_nome, loc.regiao
 ORDER BY volume_homologado_R$ DESC;
 
 -- ============================================================================
--- PERGUNTA 6: Perfil dos Gastos (Bens, Serviços, Obras e Engenharia)
+-- PERGUNTA 6: Perfil dos Gastos (Bens, Serviços e Obras) - Padronizado
 -- ============================================================================
 SELECT 
-    f.perfil_gasto,
+    CASE 
+        WHEN LOWER(f.perfil_gasto) LIKE '%material%' OR LOWER(f.perfil_gasto) LIKE '%compra%' THEN 'Bens'
+        WHEN LOWER(f.perfil_gasto) LIKE '%servico%' OR LOWER(f.perfil_gasto) LIKE '%serviço%' THEN 'Serviços'
+        WHEN LOWER(f.perfil_gasto) LIKE '%obra%' OR LOWER(f.perfil_gasto) LIKE '%engenharia%' THEN 'Obras'
+        ELSE f.perfil_gasto
+    END AS perfil_gasto,
     COUNT(*) AS total_itens,
     SUM(f.valor_total_homologado) AS volume_homologado_R$,
     ROUND(100.0 * SUM(f.valor_total_homologado) / (SELECT SUM(valor_total_homologado) FROM fato_item_contratado), 2) AS pct_volume_homologado,
@@ -122,5 +127,11 @@ SELECT
     ROUND(100.0 * SUM(CASE WHEN f.comparavel = 1 THEN f.economia_valor ELSE 0 END) / 
           NULLIF(SUM(CASE WHEN f.comparavel = 1 THEN f.valor_total_estimado ELSE 0 END), 0), 2) AS pct_economia_comparavel
 FROM fato_item_contratado f
-GROUP BY f.perfil_gasto
+GROUP BY 
+    CASE 
+        WHEN LOWER(f.perfil_gasto) LIKE '%material%' OR LOWER(f.perfil_gasto) LIKE '%compra%' THEN 'Bens'
+        WHEN LOWER(f.perfil_gasto) LIKE '%servico%' OR LOWER(f.perfil_gasto) LIKE '%serviço%' THEN 'Serviços'
+        WHEN LOWER(f.perfil_gasto) LIKE '%obra%' OR LOWER(f.perfil_gasto) LIKE '%engenharia%' THEN 'Obras'
+        ELSE f.perfil_gasto
+    END
 ORDER BY volume_homologado_R$ DESC;
