@@ -234,7 +234,7 @@ Comparação e validação de 100% dos indicadores obtidos pela esteira analíti
 
 O vídeo com a demonstração executiva do projeto, explicação do pipeline de dados e navegação pelo relatório do Power BI está disponível no link abaixo:
 
-🎥 **[Assista à apresentação do projeto no YouTube / Loom](https://seu-link-do-video-aqui.com)**
+"https://drive.google.com/file/d/1E7fJy3PUn_ZdzaO_hwCumX8G3nLO6x07/view?usp=sharing"
 
 
 
